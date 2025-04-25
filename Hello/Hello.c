@@ -10,8 +10,8 @@ MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION("BSU CS 452 HW5");
 MODULE_AUTHOR("<buff@cs.boisestate.edu>");
 
-// Using the " ", tab, and newline characters for delimiters
-#define defaultdelimiters " \t\n"
+// Using the " " and ',' for delimiters
+#define defaultdelimiters " ,"
 
 /**
  * The representation of a device
@@ -124,7 +124,8 @@ static ssize_t read(struct file *filp,
   n = (n < count ? n : count); // Uses a fixed size for count or just the size of string
                                // if size of string < fixed size
 
-  // COPY_TO_USER: Copies a block of data into user space
+  // Copy data to the user space
+  // COPY_TO_USER: Copies a block of data into userspace
   // (Userspace To *, Source, Size)
   if (copy_to_user(buf, file->s, n))
   {
@@ -151,6 +152,57 @@ static ssize_t write(struct file *filp,
 {
   // Get file from the file pointer
   (File *)file = (File *)flip;
+
+  // Create buffer to store input (+1 for '0\')
+  char *tempbuf = kmalloc(count + 1, GFP_KERNEL);
+  if (!tempbuf)
+  {
+    // Allocation failed
+    return -ENOMEM;
+  }
+
+  // Copy from user space into kernel space
+  // COPY_FROM_USER: Copy data from user space to kernel space (To [Kernel Space], From [User Space], Size)
+  if (copy_from_user(tempbuf, buf, count))
+  {
+    // Undo allocation
+    kfree(tempbuf);
+
+    // Did not return 0, that means it failed from bad addresses
+    return EFAULT;
+  }
+
+  // Mark end of the temporary buffer with the '\0' string terminating char
+  tempbuf[count] = '\0';
+
+  // Is this write instantiating new delimiters for the file
+  if (file->resetoperatorsflag)
+  {
+    // Undo allocation
+    kfree(file->operators);
+
+    // Reset the operators
+    file->separators = tempbuf;
+
+    // Undo the flag, reset is complete
+    file->resetoperatorsflag = 0;
+
+    // Return the number of characters (aka count)
+    return count;
+  }
+
+  // Update the file string if not reseting the characters
+  // Undo the allocation
+  kfree(file->s);
+
+  // Reinstantiate the string
+  file->s = tempbuf;
+
+  // Reset reading position
+  file->readposition = 0;
+
+  // Return the number of characters (aka count)
+  return count;
 }
 
 /**
