@@ -241,6 +241,7 @@ static struct file_operations ops = {
     .open = open,
     .release = release,
     .read = read,
+    .write = write,
     .unlocked_ioctl = ioctl,
     .owner = THIS_MODULE};
 
