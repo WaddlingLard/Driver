@@ -10,7 +10,7 @@ MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION("BSU CS 452 HW5");
 MODULE_AUTHOR("<buff@cs.boisestate.edu>");
 
-// Using the " ", tab, and new line characters for delimiters
+// Using the " ", tab, and newline characters for delimiters
 #define defaultdelimiters " \t\n"
 
 /**
@@ -28,9 +28,10 @@ typedef struct
  */
 typedef struct
 {
-  char *s;        // String stored in file
-  char *operators // Delimiters
-} File;           /* per-open() data */
+  char *s;             // String stored in file
+  char *operators;     // Delimiters
+  size_t readposition; // Current reading position
+} File;                /* per-open() data */
 
 static Device device;
 
@@ -79,6 +80,9 @@ static int open(struct inode *inode, struct file *filp)
   // Copy string from device to file
   strcpy(file->s, device.s);
 
+  // Set start reading position at 0
+  file->readposition = 0;
+
   // Storing the file inside filp
   filp->private_data = file;
   return 0;
@@ -96,6 +100,7 @@ static int release(struct inode *inode, struct file *filp)
 
   // Freeing the allocated memory in the kernel memory space
   // KFREE: Frees memory in the kernel memory space (Location)
+  kfree(file->operators);
   kfree(file->s);
   kfree(file);
   return 0;
