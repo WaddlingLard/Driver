@@ -28,8 +28,9 @@ typedef struct
  */
 typedef struct
 {
-  char *s; // String stored in file
-} File;    /* per-open() data */
+  char *s;        // String stored in file
+  char *operators // Delimiters
+} File;           /* per-open() data */
 
 static Device device;
 
@@ -61,7 +62,17 @@ static int open(struct inode *inode, struct file *filp)
     printk(KERN_ERR "%s: kmalloc() failed\n", DEVNAME);
 
     // Returning ERRNO 'out of memory' as negative variant
+    return -ENOMEM;
+  }
 
+  // Allocating memory for the default file delimiters defined in module
+  file->operators = (char *)kmalloc(strlen(defaultdelimiters) + 1, GFP_KERNEL);
+  if (!file->operators)
+  {
+    // Allocation filed
+    printk(KERN_ERR "%s: kmalloc() failed\n", DEVNAME);
+
+    // Returning ERRNO 'out of memory' as negative variant
     return -ENOMEM;
   }
 
