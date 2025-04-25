@@ -38,8 +38,8 @@ static Device device;
 
 /**
  * Opens a file for the device
- * @param *inode
- * @param *filp File Pointer
+ * @param inode
+ * @param filp File Pointer
  */
 static int open(struct inode *inode, struct file *filp)
 {
@@ -91,8 +91,8 @@ static int open(struct inode *inode, struct file *filp)
 
 /**
  * Closes the device file
- * @param *inode
- * @param *filp File Pointer
+ * @param inode
+ * @param filp File Pointer
  */
 static int release(struct inode *inode, struct file *filp)
 {
@@ -109,9 +109,9 @@ static int release(struct inode *inode, struct file *filp)
 
 /**
  * Reads a file
- * @param *buf Buffer to hold characters
+ * @param buf Buffer to hold characters
  * @param count Fixed size for the buffer
- * @param *f_pos File offset for position
+ * @param f_pos File offset for position
  * @return ssize_t Returns the number of characters scanned
  */
 static ssize_t read(struct file *filp,
@@ -138,8 +138,24 @@ static ssize_t read(struct file *filp,
 }
 
 /**
+ * Writes from a file
+ * @param File Pointer
+ * @param buf Buffer to hold characters
+ * @param count Fixed size for buffer
+ * @param f_pos File offset for position
+ */
+static ssize_t write(struct file *filp,
+                     char *buf,
+                     size_t count,
+                     loff_t *f_pos)
+{
+  // Get file from the file pointer
+  (File *)file = (File *)flip;
+}
+
+/**
  * IO control method
- * @param *filp File Pointer
+ * @param filp File Pointer
  * @param cmd Command Request
  * @param arg
  */
