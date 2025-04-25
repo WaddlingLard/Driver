@@ -28,10 +28,11 @@ typedef struct
  */
 typedef struct
 {
-  char *s;             // String stored in file
-  char *operators;     // Delimiters
-  size_t readposition; // Current reading position
-} File;                /* per-open() data */
+  char *s;                // String stored in file
+  char *operators;        // Delimiters
+  size_t readposition;    // Current reading position
+  int resetoperatorsflag; // Flag to let file know new operators are here
+} File;                   /* per-open() data */
 
 static Device device;
 
@@ -138,15 +139,31 @@ static ssize_t read(struct file *filp,
 
 /**
  * IO control method
- * @param *filp
- * @param cmd
+ * @param *filp File Pointer
+ * @param cmd Command Request
  * @param arg
  */
 static long ioctl(struct file *filp,
                   unsigned int cmd,
                   unsigned long arg)
 {
-  return 0;
+  // Get the file struct from the pointer
+  (File *)file = (File *)filp;
+
+  // If cmd request is 0 mark the new operators flag
+  if (cmd == 0)
+  {
+    // Set flag
+    file->resetoperatorsflag = 1;
+
+    // Proper command was sent
+    return 0;
+  }
+
+  // return 0;
+
+  // Returning value to state argument was invalid
+  return EINVAL;
 }
 
 /**
