@@ -108,7 +108,7 @@ static int release(struct inode *inode, struct file *filp)
 }
 
 /**
- * Reads a file
+ * Reads a file by tokens
  * @param buf Buffer to hold characters
  * @param count Fixed size for the buffer
  * @param f_pos File offset for position
@@ -120,6 +120,19 @@ static ssize_t read(struct file *filp,
                     loff_t *f_pos)
 {
   File *file = filp->private_data;
+
+  // Grab current string, separators, and read position
+  const char *read = file->s;
+  const char *spaces = file->operators;
+  size_t readpos = file->readposition;
+
+  // Is there a string and have we read past it?
+  if (!read || strlen(read) <= readpos)
+  {
+    // Returning "end of data"
+    return -1;
+  }
+
   int n = strlen(file->s);     // Grabbing the length of the string
   n = (n < count ? n : count); // Uses a fixed size for count or just the size of string
                                // if size of string < fixed size
@@ -158,6 +171,7 @@ static ssize_t write(struct file *filp,
   if (!tempbuf)
   {
     // Allocation failed
+    printk(KERN_ERR "%s: kmalloc() failed\n", DEVNAME);
     return -ENOMEM;
   }
 
@@ -169,6 +183,7 @@ static ssize_t write(struct file *filp,
     kfree(tempbuf);
 
     // Did not return 0, that means it failed from bad addresses
+    printk(KERN_ERR "%s: Bad addresses passed\n", DEVNAME);
     return EFAULT;
   }
 
@@ -187,6 +202,9 @@ static ssize_t write(struct file *filp,
     // Undo the flag, reset is complete
     file->resetoperatorsflag = 0;
 
+    // Notify user
+    printk(KERN_INFO "%s: Updated delimters\n", DEVNAME);
+
     // Return the number of characters (aka count)
     return count;
   }
@@ -200,6 +218,9 @@ static ssize_t write(struct file *filp,
 
   // Reset reading position
   file->readposition = 0;
+
+  // Notify user
+  printk(KERN_INFO "%s: Updated string in scanner\n", DEVNAME);
 
   // Return the number of characters (aka count)
   return count;
@@ -231,6 +252,7 @@ static long ioctl(struct file *filp,
   // return 0;
 
   // Returning value to state argument was invalid
+  printk(KERN_ERR "%s: Invalid arguments passed\n", DEVNAME);
   return EINVAL;
 }
 
