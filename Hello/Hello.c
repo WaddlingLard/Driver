@@ -257,7 +257,7 @@ static ssize_t write(struct file *filp,
                      loff_t *f_pos)
 {
   // Get file from the file pointer
-  (File *)file = (File *)filp->private_data;
+  File *file = (File *)filp->private_data;
 
   // Create buffer to store input (no more +1 for NUL termination)
   char *tempbuf = kmalloc(count, GFP_KERNEL);
@@ -337,7 +337,7 @@ static long ioctl(struct file *filp,
                   unsigned long arg)
 {
   // Get the file struct from the pointer
-  (File *)file = (File *)filp->private_data;
+  File *file = (File *)filp->private_data;
 
   // If cmd request is 0 mark the new operators flag
   if (cmd == 0)
