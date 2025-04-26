@@ -33,7 +33,12 @@ typedef struct
   size_t readposition;    // Current reading position
   int resetoperatorsflag; // Flag to let file know new operators are here
   int readingtoken = 0;   // Flag to check if token still being read
-} File;                   /* per-open() data */
+
+  // String Length for non NUL-terminated strings
+  size_t opslen;
+  size_t slen;
+
+} File; /* per-open() data */
 
 static Device device;
 
@@ -109,6 +114,37 @@ static int release(struct inode *inode, struct file *filp)
 }
 
 /**
+ * Checks if a provided character is a recognized delimiter
+ * @param separators A string of separators
+ * @param ch A character
+ * @param seplen Length of the separators string
+ * @return int 1 for yes, 0 for no
+ */
+static int isdelimiter(char *separators, char *ch, int seplen)
+{
+
+  // Start at the front of the separators
+  int readpos = 0;
+
+  // Makes sure we do not run off of the separator string
+  while (readpos < seplen)
+  {
+    // Do the characters match
+    if (*separators[readpos] == *ch)
+    {
+      // They do! Reflected in the return
+      return 1;
+    }
+
+    // Iterate to next separator character
+    readpos++;
+  }
+
+  // Not a separator :'(
+  return 0;
+}
+
+/**
  * Reads a file by tokens
  * @param buf Buffer to hold characters
  * @param count Fixed size for the buffer
@@ -122,13 +158,18 @@ static ssize_t read(struct file *filp,
 {
   File *file = filp->private_data;
 
-  // Grab current string, separators, and read position
+  // Grab current string, separators, length info and read position
   const char *read = file->s;
+
+  const int readlen = *file->slen;
+  const int opslen = *file->opslen;
+
   const char *spaces = file->operators;
   size_t readpos = file->readposition;
 
   // Is there a string and have we read past it?
-  if (!read || strlen(read) <= readpos)
+  // if (!read || strlen(read) <= readpos)
+  if (!read || readlen <= readpos)
   {
     // Returning "end of data"
     return -1;
@@ -138,14 +179,14 @@ static ssize_t read(struct file *filp,
   if (!file->readingtoken)
   {
     // Start reading and compare the current char in read to the delimiters
-    while (read[readpos] && strchr(spaces, read[readpos]))
+    while (read[readpos] && isdelimiter(spaces, read[readpos], opslen))
     {
       // Ran into a valid delimiter, skip read position
       readpos++;
     }
 
     // Have we reached the end?
-    if (strlen(read) <= readpos)
+    if (readlen <= readpos)
     {
       // End reached, return "end of data"
       file->readingposition = readpos;
@@ -157,7 +198,7 @@ static ssize_t read(struct file *filp,
   size_t startlength = readpos, tokenlength = 0;
 
   // Grab token range
-  while (read[readpos] && !strchr(spaces, read[readpos]))
+  while (readlen > readpos && !isdelimiter(spaces, read[readpos], opslen))
   {
     // A valid character that is not a separator
     // Check to see if the token length is less than requested buffer size
@@ -188,7 +229,7 @@ static ssize_t read(struct file *filp,
   file->readposition = startlength + tokenlength;
 
   // Is there still a token being read?
-  if (read[file->readposition] && !strchr(spaces, read[file->readposition]))
+  if (file->readposition < readlen && !isdelimiter(spaces, read[file->readposition], opslen))
   {
     // Token still there
     file->readingtoken = 1;
@@ -218,8 +259,8 @@ static ssize_t write(struct file *filp,
   // Get file from the file pointer
   (File *)file = filp->private_data;
 
-  // Create buffer to store input (+1 for '0\')
-  char *tempbuf = kmalloc(count + 1, GFP_KERNEL);
+  // Create buffer to store input (no more +1 for NUL termination)
+  char *tempbuf = kmalloc(count, GFP_KERNEL);
   if (!tempbuf)
   {
     // Allocation failed
@@ -239,8 +280,9 @@ static ssize_t write(struct file *filp,
     return EFAULT;
   }
 
+  // DEPRECATED
   // Mark end of the temporary buffer with the '\0' string terminating char
-  tempbuf[count] = '\0';
+  // tempbuf[count] = '\0';
 
   // Is this write instantiating new delimiters for the file
   if (file->resetoperatorsflag)
@@ -250,6 +292,9 @@ static ssize_t write(struct file *filp,
 
     // Reset the operators
     file->separators = tempbuf;
+
+    // Instantiate the separator length
+    file->opslen = count;
 
     // Undo the flag, reset is complete
     file->resetoperatorsflag = 0;
@@ -267,6 +312,9 @@ static ssize_t write(struct file *filp,
 
   // Reinstantiate the string
   file->s = tempbuf;
+
+  // Instantiate the string length
+  file->slen = count;
 
   // Reset reading position
   file->readposition = 0;
