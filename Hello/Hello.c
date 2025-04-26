@@ -159,12 +159,12 @@ static ssize_t read(struct file *filp,
   File *file = (File *)filp->private_data;
 
   // Grab current string, separators, length info and read position
-  const char *read = file->s;
+  char *read = file->s;
 
-  const int readlen = file->slen;
-  const int opslen = file->opslen;
+  int readlen = file->slen;
+  int opslen = file->opslen;
 
-  const char *spaces = file->operators;
+  char *spaces = file->operators;
   int readpos = file->readposition;
 
   // Is there a string and have we read past it?
@@ -374,7 +374,7 @@ static int __init my_init(void)
 {
 
   // Default string to store in the device
-  const char *s = "Hello world!\n";
+  char *s = "Hello world!\n";
   int err;
 
   // Allocate memory for default string in kernel memory space
