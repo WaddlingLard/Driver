@@ -189,7 +189,7 @@ static ssize_t read(struct file *filp,
     if (readlen <= readpos)
     {
       // End reached, return "end of data"
-      file->readingposition = readpos;
+      file->readposition = readpos;
       return -1;
     }
   }
