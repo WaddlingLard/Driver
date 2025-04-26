@@ -103,7 +103,7 @@ static int open(struct inode *inode, struct file *filp)
 static int release(struct inode *inode, struct file *filp)
 {
   // Retrieving the file from the file pointer
-  File *file = filp->private_data;
+  File *file = (File *)filp->private_data;
 
   // Freeing the allocated memory in the kernel memory space
   // KFREE: Frees memory in the kernel memory space (Location)
@@ -156,7 +156,7 @@ static ssize_t read(struct file *filp,
                     size_t count,
                     loff_t *f_pos)
 {
-  File *file = filp->private_data;
+  File *file = (File *)filp->private_data;
 
   // Grab current string, separators, length info and read position
   const char *read = file->s;
@@ -257,7 +257,7 @@ static ssize_t write(struct file *filp,
                      loff_t *f_pos)
 {
   // Get file from the file pointer
-  (File *)file = filp->private_data;
+  (File *)file = (File *)filp->private_data;
 
   // Create buffer to store input (no more +1 for NUL termination)
   char *tempbuf = kmalloc(count, GFP_KERNEL);
@@ -337,7 +337,7 @@ static long ioctl(struct file *filp,
                   unsigned long arg)
 {
   // Get the file struct from the pointer
-  (File *)file = filp->private_data;
+  (File *)file = (File *)filp->private_data;
 
   // If cmd request is 0 mark the new operators flag
   if (cmd == 0)
