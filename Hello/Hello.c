@@ -161,8 +161,8 @@ static ssize_t read(struct file *filp,
   // Grab current string, separators, length info and read position
   const char *read = file->s;
 
-  const int readlen = *file->slen;
-  const int opslen = *file->opslen;
+  const int readlen = file->slen;
+  const int opslen = file->opslen;
 
   const char *spaces = file->operators;
   int readpos = file->readposition;
