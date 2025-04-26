@@ -252,10 +252,10 @@ static ssize_t read(struct file *filp,
  * @param count Fixed size for buffer
  * @param f_pos File offset for position
  */
-static ssize_t write(struct file *filp,
-                     char *buf,
-                     size_t count,
-                     loff_t *f_pos)
+ssize_t write(struct file *filp,
+              const char __user *buf,
+              size_t count,
+              loff_t *f_pos)
 {
   // Get file from the file pointer
   File *file = (File *)filp->private_data;
