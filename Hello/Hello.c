@@ -179,7 +179,7 @@ static ssize_t read(struct file *filp,
   if (!file->readingtoken)
   {
     // Start reading and compare the current char in read to the delimiters
-    while (read[readpos] && isdelimiter(spaces, read[readpos], opslen))
+    while (read[readpos] && isdelimiter(spaces, &read[readpos], opslen))
     {
       // Ran into a valid delimiter, skip read position
       readpos++;
@@ -198,7 +198,7 @@ static ssize_t read(struct file *filp,
   int startlength = readpos, tokenlength = 0;
 
   // Grab token range
-  while (readlen > readpos && !isdelimiter(spaces, read[readpos], opslen))
+  while (readlen > readpos && !isdelimiter(spaces, &read[readpos], opslen))
   {
     // A valid character that is not a separator
     // Check to see if the token length is less than requested buffer size
@@ -229,7 +229,7 @@ static ssize_t read(struct file *filp,
   file->readposition = startlength + tokenlength;
 
   // Is there still a token being read?
-  if (file->readposition < readlen && !isdelimiter(spaces, read[file->readposition], opslen))
+  if (file->readposition < readlen && !isdelimiter(spaces, &read[file->readposition], opslen))
   {
     // Token still there
     file->readingtoken = 1;
