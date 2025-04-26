@@ -32,7 +32,7 @@ typedef struct
   char *operators;        // Delimiters
   int readposition;       // Current reading position
   int resetoperatorsflag; // Flag to let file know new operators are here
-  int readingtoken = 0;   // Flag to check if token still being read
+  int readingtoken;       // Flag to check if token still being read
 
   // String Length for non NUL-terminated strings
   int opslen;
