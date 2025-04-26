@@ -32,6 +32,7 @@ typedef struct
   char *operators;        // Delimiters
   size_t readposition;    // Current reading position
   int resetoperatorsflag; // Flag to let file know new operators are here
+  int readingtoken = 0;   // Flag to check if token still being read
 } File;                   /* per-open() data */
 
 static Device device;
@@ -133,22 +134,73 @@ static ssize_t read(struct file *filp,
     return -1;
   }
 
-  int n = strlen(file->s);     // Grabbing the length of the string
-  n = (n < count ? n : count); // Uses a fixed size for count or just the size of string
-                               // if size of string < fixed size
+  // Check start with delimiters, first make sure not reading anything
+  if (!file->readingtoken)
+  {
+    // Start reading and compare the current char in read to the delimiters
+    while (read[readpos] && strchr(spaces, read[readpos]))
+    {
+      // Ran into a valid delimiter, skip read position
+      readpos++;
+    }
 
-  // Copy data to the user space
+    // Have we reached the end?
+    if (strlen(read) <= readpos)
+    {
+      // End reached, return "end of data"
+      file->readingposition = readpos;
+      return -1;
+    }
+  }
+
+  // Save indexes of the token information
+  size_t startlength = readpos, tokenlength = 0;
+
+  // Grab token range
+  while (read[readpos] && !strchr(spaces, read[readpos]))
+  {
+    // A valid character that is not a separator
+    // Check to see if the token length is less than requested buffer size
+    if (tokenlength < count)
+    {
+      // Iterate both readpos and tokenlength to continue reading string
+      readpos++;
+      tokenlength++;
+    }
+    else
+    {
+      // Tokenlength has now reached buffer size, must stop loop
+      break;
+    }
+  }
+
+  // Copy token to the user space
   // COPY_TO_USER: Copies a block of data into userspace
   // (Userspace To *, Source, Size)
-  if (copy_to_user(buf, file->s, n))
+  if (copy_to_user(buf, &read[startlength], tokenlength))
   {
     // copy_to_user FAILED
     printk(KERN_ERR "%s: copy_to_user() failed\n", DEVNAME);
     return 0;
   }
 
-  // Returning the size of characters written to the buffer
-  return n;
+  // Read token, adjust position
+  file->readposition = startlength + tokenlength;
+
+  // Is there still a token being read?
+  if (read[file->readposition] && !strchr(spaces, read[file->readposition]))
+  {
+    // Token still there
+    file->readingtoken = 1;
+  }
+  else
+  {
+    // Reached end of token
+    file->readingtoken = 0;
+  }
+
+  // Returning, "end of token"
+  return 0;
 }
 
 /**
@@ -230,7 +282,7 @@ static ssize_t write(struct file *filp,
  * IO control method
  * @param filp File Pointer
  * @param cmd Command Request
- * @param arg
+ * @param arg Command Arguments
  */
 static long ioctl(struct file *filp,
                   unsigned int cmd,
