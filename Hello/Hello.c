@@ -130,7 +130,7 @@ static int isdelimiter(char *separators, char *ch, int seplen)
   while (readpos < seplen)
   {
     // Do the characters match
-    if (*separators[readpos] == *ch)
+    if (separators[readpos] == *ch)
     {
       // They do! Reflected in the return
       return 1;
@@ -291,7 +291,7 @@ static ssize_t write(struct file *filp,
     kfree(file->operators);
 
     // Reset the operators
-    file->separators = tempbuf;
+    file->operators = tempbuf;
 
     // Instantiate the separator length
     file->opslen = count;
