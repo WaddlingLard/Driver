@@ -195,7 +195,8 @@ static ssize_t read(struct file *filp,
   }
 
   // Save indexes of the token information
-  int startlength = readpos, tokenlength = 0;
+  int startlength = readpos;
+  int tokenlength = 0;
 
   // Grab token range
   while (readlen > readpos && !isdelimiter(spaces, &read[readpos], opslen))
