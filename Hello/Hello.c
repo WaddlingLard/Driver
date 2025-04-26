@@ -30,13 +30,13 @@ typedef struct
 {
   char *s;                // String stored in file
   char *operators;        // Delimiters
-  size_t readposition;    // Current reading position
+  int readposition;       // Current reading position
   int resetoperatorsflag; // Flag to let file know new operators are here
   int readingtoken = 0;   // Flag to check if token still being read
 
   // String Length for non NUL-terminated strings
-  size_t opslen;
-  size_t slen;
+  int opslen;
+  int slen;
 
 } File; /* per-open() data */
 
@@ -165,7 +165,7 @@ static ssize_t read(struct file *filp,
   const int opslen = *file->opslen;
 
   const char *spaces = file->operators;
-  size_t readpos = file->readposition;
+  int readpos = file->readposition;
 
   // Is there a string and have we read past it?
   // if (!read || strlen(read) <= readpos)
@@ -195,7 +195,7 @@ static ssize_t read(struct file *filp,
   }
 
   // Save indexes of the token information
-  size_t startlength = readpos, tokenlength = 0;
+  int startlength = readpos, tokenlength = 0;
 
   // Grab token range
   while (readlen > readpos && !isdelimiter(spaces, read[readpos], opslen))
